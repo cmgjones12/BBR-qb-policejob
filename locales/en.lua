@@ -40,8 +40,7 @@ local Translations = {
         put_anklet_on = 'You put on an ankle tracker on %{firstname} %{lastname}',
         vehicle_flagged = 'Vehicle %{plate} has been flagged for %{reason}',
         impound_vehicle_removed = 'Vehicle taken out of impound!',
-        impounded = 'Vehicle impounded',
- },
+    },
     info = {
         mr = 'Mr.',
         mrs = 'Mrs.',
@@ -56,7 +55,7 @@ local Translations = {
         dna_sample = 'DNA Sample',
         jail_time = 'Time they have to be in jail',
         jail_time_no = 'Jail time needs to be higher than 0',
-        license_type = 'License Type (driver/weapon)',
+        license_type = 'License Type (driver/weapon/hunting)',
         ankle_location = 'Ankle Tracker Location',
         cuff = 'You are cuffed!',
         cuffed_walk = 'You are cuffed, but you can walk',
@@ -180,11 +179,10 @@ local Translations = {
         robbing = 'Robbing Person...',
         place_object = 'Placing object..',
         remove_object = 'Removing object..',
-        impound = 'Impounding Vehicle..',
     },
 }
 
-Lang = Lang or Locale:new({
+Lang = Locale:new({
     phrases = Translations,
     warnOnMissing = true
 })

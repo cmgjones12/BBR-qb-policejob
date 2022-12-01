@@ -70,7 +70,7 @@ RegisterNetEvent('police:client:PutInVehicle', function()
     if isHandcuffed or isEscorted then
         local vehicle = QBCore.Functions.GetClosestVehicle()
         if DoesEntityExist(vehicle) then
-            for i = GetVehicleMaxNumberOfPassengers(vehicle), 0, -1 do
+			for i = GetVehicleMaxNumberOfPassengers(vehicle), 1, -1 do
                 if IsVehicleSeatFree(vehicle, i) then
                     isEscorted = false
                     TriggerEvent('hospital:client:isEscorted', isEscorted)
@@ -82,7 +82,7 @@ RegisterNetEvent('police:client:PutInVehicle', function()
                     return
                 end
             end
-        end
+		end
     end
 end)
 
@@ -274,23 +274,62 @@ RegisterNetEvent('police:client:CuffPlayerSoft', function()
         Wait(2000)
     end
 end)
+local prevMaleVariation = 0
+local prevFemaleVariation = 0
+local femaleHash = GetHashKey("mp_f_freemode_01")
+local maleHash = GetHashKey("mp_m_freemode_01")
 
 RegisterNetEvent('police:client:CuffPlayer', function()
     if not IsPedRagdoll(PlayerPedId()) then
         local player, distance = QBCore.Functions.GetClosestPlayer()
         if player ~= -1 and distance < 1.5 then
-            local result = QBCore.Functions.Hasitem(Config.HandCuffItem)
-            if result then
-                local playerId = GetPlayerServerId(player)
-                if not IsPedInAnyVehicle(GetPlayerPed(player)) and not IsPedInAnyVehicle(PlayerPedId()) then
-                    TriggerServerEvent("police:server:CuffPlayer", playerId, false)
-                    HandCuffAnimation()
+            QBCore.Functions.TriggerCallback('QBCore:HasItem', function(result)
+                if result then
+                    local playerId = GetPlayerServerId(player)
+                    if not IsPedInAnyVehicle(GetPlayerPed(player)) and not IsPedInAnyVehicle(PlayerPedId()) then
+                        TriggerServerEvent("police:server:CuffPlayer", playerId, false)
+						cuffs = CreateObject(GetHashKey("p_cs_cuffs_02_s"), coords.X, coords.Y, coords.Z, true, true, true);
+                        HandCuffAnimation()
+						AttachEntityToEntity(cuffs, GetPlayerPed(PlayerId()), GetPedBoneIndex(GetPlayerPed(PlayerId()), 60309), 1, 2, 3, 3, 4, 1, true, false, false, false, 0, true);
+                    else
+                        QBCore.Functions.Notify(Lang:t("error.vehicle_cuff"), "error")
+                    end
                 else
-                    QBCore.Functions.Notify(Lang:t("error.vehicle_cuff"), "error")
+                    QBCore.Functions.Notify(Lang:t("error.no_cuff"), "error")
                 end
-            else
-                QBCore.Functions.Notify(Lang:t("error.no_cuff"), "error")
-            end
+            end, Config.HandCuffItem)
+        else
+            QBCore.Functions.Notify(Lang:t("error.none_nearby"), "error")
+        end
+    else
+        Wait(2000)
+    end
+end)
+
+RegisterNetEvent('police:client:CuffPlayer1', function()
+    if not IsPedRagdoll(PlayerPedId()) then
+        local player, distance = QBCore.Functions.GetClosestPlayer()
+        if player ~= -1 and distance < 1.5 then
+            QBCore.Functions.TriggerCallback('QBCore:HasItem', function(result)
+                if result then
+                    local playerId = GetPlayerServerId(player)
+                    if not IsPedInAnyVehicle(GetPlayerPed(player)) and not IsPedInAnyVehicle(PlayerPedId()) then
+                        TriggerServerEvent("police:server:CuffPlayer1", playerId, false)
+                        TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
+                        disableMovement = true,
+                        exports['an_progBar']:run(10,'cracking Cuffs','#E14127')
+                        Citizen.Wait(10000)
+                        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+						cuffs = CreateObject(GetHashKey("p_cs_cuffs_02_s"), coords.X, coords.Y, coords.Z, true, true, true);
+                        HandCuffAnimation()
+						AttachEntityToEntity(cuffs, GetPlayerPed(PlayerId()), GetPedBoneIndex(GetPlayerPed(PlayerId()), 60309), 1, 2, 3, 3, 4, 1, true, false, false, false, 0, true);
+                    else
+                        QBCore.Functions.Notify(Lang:t("error.vehicle_cuff"), "error")
+                    end
+                else
+                    QBCore.Functions.Notify(Lang:t("error.no_cuff"), "error")
+                end
+            end, Config.RemoveCuffItem)
         else
             QBCore.Functions.Notify(Lang:t("error.none_nearby"), "error")
         end
@@ -370,6 +409,38 @@ RegisterNetEvent('police:client:GetKidnappedDragger', function()
 end)
 
 RegisterNetEvent('police:client:GetCuffed', function(playerId, isSoftcuff)
+    local ped = PlayerPedId()
+    if not isHandcuffed then
+        isHandcuffed = true
+        TriggerServerEvent("police:server:SetHandcuffStatus", true)
+        ClearPedTasksImmediately(ped)
+        if GetSelectedPedWeapon(ped) ~= `WEAPON_UNARMED` then
+            SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
+        end
+        if not isSoftcuff then
+            cuffType = 16
+            GetCuffedAnimation(playerId)
+            QBCore.Functions.Notify(Lang:t("info.cuff"), 'primary')
+        else
+            cuffType = 49
+            GetCuffedAnimation(playerId)
+            QBCore.Functions.Notify(Lang:t("info.cuffed_walk"), 'primary')
+        end
+    else
+        isHandcuffed = false
+        isEscorted = false
+        TriggerEvent('hospital:client:isEscorted', isEscorted)
+        DetachEntity(ped, true, false)
+        TriggerServerEvent("police:server:SetHandcuffStatus", false)
+        ClearPedTasksImmediately(ped)
+        TriggerServerEvent("InteractSound_SV:PlayOnSource", "Uncuff", 0.2)
+        QBCore.Functions.Notify(Lang:t("success.uncuffed"),"success")
+    end
+end)
+
+RegisterNetEvent('police:client:GetCuffed1', function(playerId, isSoftcuff)
+    exports['an_progBar']:run(10,'Cracking cuffs','#E14127')
+    Citizen.Wait(10000)
     local ped = PlayerPedId()
     if not isHandcuffed then
         isHandcuffed = true
